@@ -148,13 +148,19 @@ Markup = {
 				urlOptions = { size: options.size };
 			}
 
-			const img = React.createElement( 'img', {
+			const isTransient = ( 0 === ( media.URL || '' ).indexOf( 'blob:' ) ) || !! media.transient;
+			const imgProps = {
 				src: MediaUtils.url( media, urlOptions ),
 				alt: media.alt || media.title,
 				width: isFinite( width ) ? width : null,
 				height: isFinite( height ) ? height : null,
-				className: classNames( 'align' + options.align, 'size-' + options.size, 'wp-image-' + media.ID )
-			} );
+				className: classNames( 'align' + options.align, 'size-' + options.size, 'wp-image-' + media.ID ),
+				'data-istransient': isTransient,
+			};
+			if ( ! isTransient ) {
+				delete imgProps[ 'data-istransient' ];
+			}
+			const img = React.createElement( 'img', imgProps );
 
 			let markup = ReactDomServer.renderToStaticMarkup( img );
 			if ( media.caption && width ) {
