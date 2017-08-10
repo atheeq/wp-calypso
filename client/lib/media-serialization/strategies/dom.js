@@ -21,7 +21,7 @@ function parseImage( node, _parsed ) {
 	_parsed.type = MediaTypes.IMAGE;
 	_parsed.media.URL = node.getAttribute( 'src' );
 	_parsed.media.alt = node.getAttribute( 'alt' );
-	_parsed.media.transient = !! node.getAttribute( 'data-istransient' );
+	_parsed.media.transient = node.hasAttribute( 'data-istransient' ) && node.getAttribute( 'data-istransient' ) !== 'false';
 
 	// Parse dimensions
 	[ 'width', 'height' ].forEach( ( dimension ) => {
