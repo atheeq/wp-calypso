@@ -148,19 +148,14 @@ Markup = {
 				urlOptions = { size: options.size };
 			}
 
-			const isTransient = ( 0 === ( media.URL || '' ).indexOf( 'blob:' ) ) || !! media.transient;
-			const imgProps = {
+			const img = React.createElement( 'img', {
 				src: MediaUtils.url( media, urlOptions ),
 				alt: media.alt || media.title,
 				width: isFinite( width ) ? width : null,
 				height: isFinite( height ) ? height : null,
 				className: classNames( 'align' + options.align, 'size-' + options.size, 'wp-image-' + media.ID ),
-				'data-istransient': isTransient,
-			};
-			if ( ! isTransient ) {
-				delete imgProps[ 'data-istransient' ];
-			}
-			const img = React.createElement( 'img', imgProps );
+				'data-istransient': !! media.transient || null // we want the att to not be rendered if it is false
+			} );
 
 			let markup = ReactDomServer.renderToStaticMarkup( img );
 			if ( media.caption && width ) {
