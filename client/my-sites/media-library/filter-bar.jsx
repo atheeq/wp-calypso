@@ -19,7 +19,7 @@ import Search from 'components/search';
 import TrackComponentView from 'lib/analytics/track-component-view';
 import PlanStorage from 'blocks/plan-storage';
 import FilterItem from './filter-item';
-import TitleItem from './title-item';
+import DataSource from './data-source';
 
 export class MediaLibraryFilterBar extends Component {
 	static propTypes = {
@@ -31,15 +31,17 @@ export class MediaLibraryFilterBar extends Component {
 		source: React.PropTypes.string,
 		site: React.PropTypes.object,
 		onFilterChange: React.PropTypes.func,
+		onSourceChange: React.PropTypes.func,
 		onSearch: React.PropTypes.func,
 		translate: React.PropTypes.func,
-		post: React.PropTypes.bool
+		post: React.PropTypes.bool,
 	};
 
 	static defaultProps ={
 		filter: '',
 		basePath: '/media',
 		onFilterChange: noop,
+		onSourceChange: noop,
 		onSearch: noop,
 		translate: identity,
 		source: '',
@@ -92,16 +94,6 @@ export class MediaLibraryFilterBar extends Component {
 		this.props.onFilterChange( filter );
 	};
 
-	renderSectionTitle() {
-		const { translate } = this.props;
-
-		if ( this.props.source === 'google_photos' ) {
-			return <TitleItem>{ translate( 'Recent photos from Google' ) }</TitleItem>;
-		}
-
-		return null;
-	}
-
 	renderTabItems() {
 		if ( this.props.source !== '' ) {
 			return null;
@@ -137,10 +129,12 @@ export class MediaLibraryFilterBar extends Component {
 			return null;
 		}
 
+		const isPinned = this.props.source === '';
+
 		return (
 			<Search
 				analyticsGroup="Media"
-				pinned
+				pinned={ isPinned }
 				fitsContainer
 				onSearch={ this.props.onSearch }
 				initialValue={ this.props.search }
@@ -163,12 +157,13 @@ export class MediaLibraryFilterBar extends Component {
 		// Dropdown is disabled when viewing any external data source
 		return (
 			<div className="media-library__filter-bar">
+				<DataSource source={ this.props.source } onSourceChange={ this.props.onSourceChange } />
+
 				<SectionNav
 					selectedText={ this.getFilterLabel( this.props.filter ) }
 					hasSearch={ true }
 					allowDropdown={ ! this.props.source }
 				>
-					{ this.renderSectionTitle() }
 					{ this.renderTabItems() }
 					{ this.renderSearchSection() }
 				</SectionNav>
