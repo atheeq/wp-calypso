@@ -177,9 +177,28 @@ class SimplePaymentsDialog extends Component {
 		return isNumber( this.props.editPaymentId );
 	}
 
+	// Are we editing an existing payment button?
+	isEditing() {
+		return this.state.activeTab === 'form' && isNumber( this.state.editedPaymentId );
+	}
+
+	handleClose = () => {
+		if ( this.isEditing() && this.props.formCanBeSubmitted ) {
+			// if there is a form that needs to be saved, do it and delay the transition.
+			// if the saving fails, the transition will be cancelled -- dialog remains opened.
+			this.saveForm().then( () => this.props.onClose() );
+		} else {
+			this.props.onClose();
+		}
+	};
+
 	handleChangeTabs = activeTab => {
 		if ( activeTab === 'form' ) {
 			this.showButtonForm( null );
+		} else if ( this.isEditing() && this.props.formCanBeSubmitted ) {
+			// if there is a form that needs to be saved, do it and delay the transition.
+			// if the saving fails, the transition will be cancelled -- the tab is not switched.
+			this.saveForm().then( () => this.showButtonList() );
 		} else {
 			this.showButtonList();
 		}
@@ -236,26 +255,32 @@ class SimplePaymentsDialog extends Component {
 			.then( () => this.setIsSubmitting( false ) );
 	};
 
-	handleSave = () => {
+	saveForm() {
 		this.setIsSubmitting( true );
 
 		const { siteId, dispatch, translate } = this.props;
 		const { editedPaymentId } = this.state;
 
-		dispatch( updatePaymentButton( siteId, editedPaymentId ) )
-			.then( () => {
-				// On successful update, either go back to list or close the dialog.
-				// On save error, keep the form displayed, i.e., do nothing here.
-				if ( this.isDirectEdit() ) {
-					// after changes are saved, close the dialog...
-					this.props.onClose();
-				} else {
-					// ...or return to the list
-					this.showButtonList();
-				}
-			} )
+		const update = dispatch( updatePaymentButton( siteId, editedPaymentId ) );
+		update
 			.catch( () => this.showError( translate( 'The payment button could not be updated.' ) ) )
 			.then( () => this.setIsSubmitting( false ) );
+
+		return update;
+	}
+
+	handleSave = () => {
+		this.saveForm().then( () => {
+			// On successful update, either go back to list or close the dialog.
+			// On save error, keep the form displayed, i.e., do nothing here.
+			if ( this.isDirectEdit() ) {
+				// after changes are saved, close the dialog...
+				this.props.onClose();
+			} else {
+				// ...or return to the list
+				this.showButtonList();
+			}
+		} );
 	};
 
 	handleTrash = paymentId => {
@@ -291,43 +316,37 @@ class SimplePaymentsDialog extends Component {
 		const { formCanBeSubmitted, onClose, translate } = this.props;
 		const { activeTab, isSubmitting } = this.state;
 
-		const buttons = [
-			<Button onClick={ onClose } disabled={ isSubmitting }>
-				{ translate( 'Cancel' ) }
-			</Button>,
-		];
-
-		// When editing an existing payment, show "Save" button. Otherwise, show "Insert"
-		const showSave = activeTab === 'form' && isNumber( this.state.editedPaymentId );
-		if ( showSave ) {
-			buttons.push(
+		// When editing an existing payment, show "Done" button. Otherwise, show "Cancel" and "Insert"
+		if ( this.isEditing() ) {
+			return [
 				<Button
 					onClick={ this.handleSave }
 					busy={ isSubmitting }
 					disabled={ isSubmitting || ! formCanBeSubmitted }
 					primary
 				>
-					{ translate( 'Save' ) }
-				</Button>
-			);
-		} else {
-			const insertDisabled =
-				( activeTab === 'form' && ! formCanBeSubmitted ) ||
-				( activeTab === 'list' && this.state.selectedPaymentId === null );
-
-			buttons.push(
-				<Button
-					onClick={ this.handleInsert }
-					busy={ isSubmitting }
-					disabled={ isSubmitting || insertDisabled }
-					primary
-				>
-					{ translate( 'Insert' ) }
-				</Button>
-			);
+					{ isSubmitting ? translate( 'Saving…' ) : translate( 'Done' ) }
+				</Button>,
+			];
 		}
 
-		return buttons;
+		const insertDisabled =
+			( activeTab === 'form' && ! formCanBeSubmitted ) ||
+			( activeTab === 'list' && this.state.selectedPaymentId === null );
+
+		return [
+			<Button onClick={ onClose } disabled={ isSubmitting }>
+				{ translate( 'Cancel' ) }
+			</Button>,
+			<Button
+				onClick={ this.handleInsert }
+				busy={ isSubmitting }
+				disabled={ isSubmitting || insertDisabled }
+				primary
+			>
+				{ isSubmitting ? translate( 'Saving…' ) : translate( 'Insert' ) }
+			</Button>,
+		];
 	}
 
 	renderEmptyDialog( content ) {
@@ -409,7 +428,7 @@ class SimplePaymentsDialog extends Component {
 		return (
 			<Dialog
 				isVisible={ showDialog }
-				onClose={ onClose }
+				onClose={ this.handleClose }
 				buttons={ this.getActionButtons() }
 				additionalClassNames="editor-simple-payments-modal"
 			>
