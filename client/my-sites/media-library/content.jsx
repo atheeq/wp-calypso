@@ -6,6 +6,7 @@ import { connect } from 'react-redux';
 import createFragment from 'react-addons-create-fragment';
 import { groupBy, head, mapValues, noop, some, toArray, values } from 'lodash';
 import { translate } from 'i18n-calypso';
+import PropTypes from 'prop-types';
 import page from 'page';
 
 /**
@@ -36,39 +37,39 @@ import {
 
 const isConnected = props => some( props.connectedServices, item => item.service === props.source );
 
-const MediaLibraryContent = React.createClass( {
-	propTypes: {
-		site: React.PropTypes.object,
-		mediaValidationErrors: React.PropTypes.object,
-		filter: React.PropTypes.string,
-		filterRequiresUpgrade: React.PropTypes.bool,
-		search: React.PropTypes.string,
-		source: React.PropTypes.string,
-		containerWidth: React.PropTypes.number,
-		single: React.PropTypes.bool,
-		scrollable: React.PropTypes.bool,
-		onAddMedia: React.PropTypes.func,
-		onMediaScaleChange: React.PropTypes.func,
-		onEditItem: React.PropTypes.func,
-		postId: React.PropTypes.number
-	},
+class MediaLibraryContent extends React.Component {
+	static propTypes = {
+		site: PropTypes.object,
+		mediaValidationErrors: PropTypes.object,
+		filter: PropTypes.string,
+		filterRequiresUpgrade: PropTypes.bool,
+		search: PropTypes.string,
+		source: PropTypes.string,
+		containerWidth: PropTypes.number,
+		single: PropTypes.bool,
+		scrollable: PropTypes.bool,
+		onAddMedia: PropTypes.func,
+		onMediaScaleChange: PropTypes.func,
+		onEditItem: PropTypes.func,
+		postId: PropTypes.number,
+		isConnected: PropTypes.bool,
+	};
 
-	getDefaultProps: function() {
-		return {
-			mediaValidationErrors: Object.freeze( {} ),
-			onAddMedia: noop,
-			source: '',
-		};
-	},
+	static defaultProps = {
+		mediaValidationErrors: Object.freeze( {} ),
+		onAddMedia: noop,
+		source: '',
+	}
 
-	componentWillMount: function() {
+
 		if ( ! this.props.isRequesting && this.props.source !== '' && this.props.connectedServices.length === 0 ) {
+	componentWillMount() {
 			// Are we connected to anything yet?
 			this.props.requestKeyringConnections();
 		}
-	},
+	}
 
-	renderErrors: function() {
+	renderErrors() {
 		var errorTypes, notices;
 
 		errorTypes = values( this.props.mediaValidationErrors ).map( head );
@@ -160,7 +161,7 @@ const MediaLibraryContent = React.createClass( {
 		} );
 
 		return createFragment( notices );
-	},
+	}
 
 	renderTryAgain() {
 		return (
@@ -168,11 +169,11 @@ const MediaLibraryContent = React.createClass( {
 				{ translate( 'Retry' ) }
 			</NoticeAction>
 		);
-	},
+	}
 
 	retryList() {
 		MediaActions.sourceChanged( this.props.site.ID );
-	},
+	}
 
 	renderNoticeAction( upgradeNudgeName, upgradeNudgeFeature ) {
 		if ( !upgradeNudgeName ) {
@@ -192,17 +193,17 @@ const MediaLibraryContent = React.createClass( {
 				<TrackComponentView eventName={ eventName } eventProperties={ eventProperties } />
 			</NoticeAction>
 		);
-	},
+	}
 
 	recordPlansNavigation( tracksEvent, tracksData ) {
 		analytics.ga.recordEvent( 'Media', 'Clicked Upload Error Action' );
 		analytics.tracks.recordEvent( tracksEvent, tracksData );
-	},
+	}
 
 	goToSharing( ev ) {
 		ev.preventDefault();
 		page( `/sharing/${ this.props.site.slug }` );
-	},
+	}
 
 	renderExternalMedia() {
 		const connectMessage = translate(
@@ -219,7 +220,7 @@ const MediaLibraryContent = React.createClass( {
 				<p>{ connectMessage }</p>
 			</div>
 		);
-	},
+	}
 
 	getThumbnailType() {
 		if ( this.props.source !== '' ) {
@@ -231,10 +232,10 @@ const MediaLibraryContent = React.createClass( {
 		}
 
 		return MEDIA_IMAGE_PHOTON;
-	},
+	}
 
-	renderMediaList: function() {
 		if ( ! this.props.site || this.props.isRequesting ) {
+	renderMediaList() {
 			return <MediaLibraryList key="list-loading" filterRequiresUpgrade={ this.props.filterRequiresUpgrade } />;
 		}
 
@@ -264,7 +265,7 @@ const MediaLibraryContent = React.createClass( {
 				</MediaLibrarySelectedData>
 			</MediaListData>
 		);
-	},
+	}
 
 	renderHeader() {
 		if ( this.props.source !== '' ) {
@@ -294,9 +295,9 @@ const MediaLibraryContent = React.createClass( {
 		}
 
 		return null;
-	},
+	}
 
-	render: function() {
+	render() {
 		return (
 			<div className="media-library__content">
 				{ this.renderHeader() }
@@ -305,7 +306,7 @@ const MediaLibraryContent = React.createClass( {
 			</div>
 		);
 	}
-} );
+}
 
 export default connect( ( state, ownProps ) => {
 	return {
