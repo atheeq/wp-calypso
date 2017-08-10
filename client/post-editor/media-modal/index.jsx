@@ -360,6 +360,11 @@ export class EditorMediaModal extends Component {
 		} );
 	};
 
+	onSourceChange = source => {
+		MediaActions.sourceChanged( this.props.site.ID );
+		this.setState( { source, search: undefined } );
+	};
+
 	onClose = () => {
 		this.props.onClose();
 	};
@@ -518,6 +523,7 @@ export class EditorMediaModal extends Component {
 						onAddAndEditImage={ this.onAddAndEditImage }
 						onFilterChange={ this.onFilterChange }
 						onScaleChange={ this.onScaleChange }
+						onSourceChange={ this.onSourceChange }
 						onSearch={ this.onSearch }
 						onEditItem={ this.editItem }
 						fullScreenDropZone={ false }
