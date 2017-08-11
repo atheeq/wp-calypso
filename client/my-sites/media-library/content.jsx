@@ -4,7 +4,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import createFragment from 'react-addons-create-fragment';
-import { groupBy, head, mapValues, noop, some, toArray, values } from 'lodash';
+import { groupBy, head, mapValues, noop, values } from 'lodash';
 import { translate } from 'i18n-calypso';
 import PropTypes from 'prop-types';
 import page from 'page';
@@ -29,13 +29,8 @@ import { getSiteSlug } from 'state/sites/selectors';
 import MediaLibraryHeader from './header';
 import MediaLibraryExternalHeader from './external-media-header';
 import MediaLibraryList from './list';
-import { requestKeyringConnections } from 'state/sharing/keyring/actions';
-import {
-	isKeyringConnectionsFetching,
-	getKeyringConnections,
-} from 'state/sharing/keyring/selectors';
-
-const isConnected = props => some( props.connectedServices, item => item.service === props.source );
+import InlineConnection from 'my-sites/sharing/connections/inline-connection';
+import { isKeyringConnectionsFetching } from 'state/sharing/keyring/selectors';
 
 class MediaLibraryContent extends React.Component {
 	static propTypes = {
@@ -61,16 +56,8 @@ class MediaLibraryContent extends React.Component {
 		source: '',
 	}
 
-
-		if ( ! this.props.isRequesting && this.props.source !== '' && this.props.connectedServices.length === 0 ) {
-	componentWillMount() {
-			// Are we connected to anything yet?
-			this.props.requestKeyringConnections();
-		}
-	}
-
 	renderErrors() {
-		var errorTypes, notices;
+		let errorTypes, notices;
 
 		errorTypes = values( this.props.mediaValidationErrors ).map( head );
 		notices = mapValues( groupBy( errorTypes ), ( occurrences, errorType ) => {
@@ -207,17 +194,15 @@ class MediaLibraryContent extends React.Component {
 
 	renderExternalMedia() {
 		const connectMessage = translate(
-			'To show Photos from Google, you need to connect your Google account. Do that from {{link}}your Sharing settings{{/link}}.', {
-				components: {
-					link: <a href={ `/sharing/${ this.props.site.slug }` } onClick={ this.goToSharing } />
-				}
-			}
+			'To show Photos from Google, you need to connect your Google account.'
 		);
 
 		return (
 			<div className="media-library__connect-message">
 				<p><img src="/calypso/images/sharing/google-photos-logo.svg" width="96" height="96" /></p>
 				<p>{ connectMessage }</p>
+
+				<InlineConnection serviceName="google_photos" />
 			</div>
 		);
 	}
@@ -234,12 +219,13 @@ class MediaLibraryContent extends React.Component {
 		return MEDIA_IMAGE_PHOTON;
 	}
 
-		if ( ! this.props.site || this.props.isRequesting ) {
 	renderMediaList() {
+		if ( ! this.props.site || ( this.props.isRequesting && ! this.hasRequested ) ) {
+			this.hasRequested = true;   // We only want to do this once
 			return <MediaLibraryList key="list-loading" filterRequiresUpgrade={ this.props.filterRequiresUpgrade } />;
 		}
 
-		if ( this.props.source !== '' && ! isConnected( this.props ) ) {
+		if ( this.props.source !== '' && ! this.props.isConnected ) {
 			return this.renderExternalMedia();
 		}
 
@@ -268,6 +254,10 @@ class MediaLibraryContent extends React.Component {
 	}
 
 	renderHeader() {
+		if ( ! this.props.isConnected ) {
+			return null;
+		}
+
 		if ( this.props.source !== '' ) {
 			return (
 				<MediaLibraryExternalHeader
@@ -308,12 +298,7 @@ class MediaLibraryContent extends React.Component {
 	}
 }
 
-export default connect( ( state, ownProps ) => {
-	return {
-		siteSlug: ownProps.site ? getSiteSlug( state, ownProps.site.ID ) : '',
-		connectedServices: toArray( getKeyringConnections( state ) ).filter( item => item.type === 'other' && item.status === 'ok' ),
-		isRequesting: isKeyringConnectionsFetching( state ),
-	};
-}, {
-	requestKeyringConnections,
-}, null, { pure: false } )( MediaLibraryContent );
+export default connect( ( state, ownProps ) => ( {
+	siteSlug: ownProps.site ? getSiteSlug( state, ownProps.site.ID ) : '',
+	isRequesting: isKeyringConnectionsFetching( state ),
+} ), null, null, { pure: false } )( MediaLibraryContent );
