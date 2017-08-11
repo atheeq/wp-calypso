@@ -1,6 +1,7 @@
 /**
  * External dependencies
  */
+import classNames from 'classnames';
 import React, { PropTypes } from 'react';
 import { startCase } from 'lodash';
 import { connect } from 'react-redux';
@@ -79,9 +80,25 @@ export class Login extends React.Component {
 	}
 
 	renderFooter() {
+		const isOauthLogin = !! this.props.oauth2ClientData;
 		return (
-			<div className="wp-login__jetpack-footer">
-				<img src="/calypso/images/jetpack/powered-by-jetpack.svg" alt="Powered by Jetpack" />
+			<div
+				className={ classNames( 'wp-login__footer', {
+					'wp-login__footer--oauth': isOauthLogin,
+					'wp-login__footer--jetpack': ! isOauthLogin,
+				} ) }
+			>
+				<div className="wp-login__footer--content">
+					{ isOauthLogin ? (
+						<div className="wp-login__footer-links">
+							<a href="https://en.wordpress.com/about/" key="about">About</a>
+							<a href="https://automattic.com/privacy/" key="privacy">Privacy</a>
+							<a href="https://en.wordpress.com/tos/" key="tos">Terms of Service</a>
+						</div>
+					) : (
+						<img src="/calypso/images/jetpack/powered-by-jetpack.svg" alt="Powered by Jetpack" />
+					) }
+				</div>
 			</div>
 		);
 	}
