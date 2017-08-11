@@ -1,7 +1,8 @@
+/** @format */
 /**
  * External dependencies
  */
-import { pick } from 'lodash';
+import { omit, pick } from 'lodash';
 
 /**
  * Internal dependencies
@@ -9,41 +10,40 @@ import { pick } from 'lodash';
 import { dispatchRequest } from 'state/data-layer/wpcom-http/utils';
 import { http } from 'state/data-layer/wpcom-http/actions';
 import { ACTIVITY_LOG_REQUEST } from 'state/action-types';
-import {
-	activityLogError,
-	activityLogUpdate,
-} from 'state/activity-log/actions';
+import { activityLogError, activityLogUpdate } from 'state/activity-log/actions';
 
 export const handleActivityLogRequest = ( { dispatch }, action ) => {
-	dispatch( http( {
-		apiVersion: '1',
-		method: 'GET',
-		path: `/sites/${ action.siteId }/activity`,
-		query: {
-			number: 1000,
-			...action.params,
-		},
-	}, action ) );
+	dispatch(
+		http(
+			{
+				apiVersion: '1',
+				method: 'GET',
+				path: `/sites/${ action.siteId }/activity`,
+				query: {
+					number: 1000,
+					...action.params,
+				},
+			},
+			action
+		)
+	);
 };
 
 // FIXME: Implement fromApi
-const fromApi = ( { activities } ) => activities;
+const fromApi = apiActivities => apiActivities;
 
-export const receiveActivityLog = ( { dispatch }, { siteId }, data ) => {
-	dispatch( activityLogUpdate( siteId, fromApi( data ) ) );
+export const receiveActivityLog = ( { dispatch }, { siteId, ...query }, { activities, found } ) => {
+	dispatch(
+		activityLogUpdate( siteId, fromApi( activities ), found, omit( query, [ 'type', 'meta' ] ) )
+	);
 };
 
 export const receiveActivityLogError = ( { dispatch }, { siteId }, error ) => {
-	dispatch( activityLogError(
-		siteId,
-		pick( error, [ 'error', 'status', 'message' ]
-	) ) );
+	dispatch( activityLogError( siteId, pick( error, [ 'error', 'status', 'message' ] ) ) );
 };
 
 export default {
-	[ ACTIVITY_LOG_REQUEST ]: [ dispatchRequest(
-		handleActivityLogRequest,
-		receiveActivityLog,
-		receiveActivityLogError
-	) ],
+	[ ACTIVITY_LOG_REQUEST ]: [
+		dispatchRequest( handleActivityLogRequest, receiveActivityLog, receiveActivityLogError ),
+	],
 };
